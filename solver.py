@@ -3,6 +3,8 @@ import numpy as np
 import time
 import math
 
+MAX_DEPTH = 3
+
 class GameBoard:
     """
     The Gameboard State
@@ -18,12 +20,18 @@ class GameBoard:
         if NumMoves:
             self.NumMoves = NumMoves
         else:
-            self.NumMoves = 3 # math.ceil(self.NumEnemies() / 4)
+            self.NumMoves = MAX_DEPTH
         
         if NumAttacks:
             self.NumAttacks = NumAttacks
         else:
             self.NumAttacks = math.ceil(self.NumEnemies() / 4)
+
+    def ValidRowMoves(self):
+        return np.nonzero(np.sum(self.Board,axis=1))[0]
+    
+    def ValidColMoves(self):
+        return np.nonzero(np.sum(self.Board[:,0:6] + self.Board[:,6:12],axis=0))[0]
 
     def MoveRow(self, row, num):
         assert 0 <= row <= 3
@@ -67,7 +75,7 @@ def SolveBoard(Board: GameBoard, NumMoves=None):
         NumMoves = Board.NumMoves
 
     # Rows
-    for i in range(0, 4):
+    for i in Board.ValidRowMoves():
         for j in range(1, 12): # Start at once since move of 0 is wasteful
             TempBoard: GameBoard = copy.deepcopy(Board)
             TempBoard.MoveRow(i, j)
@@ -179,4 +187,4 @@ if __name__ == "__main__":
     if Win:
         PrintResult(Moves)
     else:
-        "No solution found"
+        print("No solution found")
