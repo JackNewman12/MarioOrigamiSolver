@@ -171,11 +171,12 @@ if __name__ == "__main__":
     InputPos = np.array([int(c) for c in InputPos])
     InputPos.resize((4, 12))
 
+    Board = GameBoard(InputPos)
+    print(f"Solving Board:\n{Board}")
     StartTime = time.time()
-    Board = GameBoard(InputPos)#, NumMoves=NumMoves, NumAttacks=NumAttacks)
-    print(f"Here we go! Starting Board:\n{Board}")
-    
     Win, Moves = SolveBoard(Board)
+    print(f"Finished: {time.time() - StartTime} seconds")
     if Win:
         PrintResult(Moves)
-    print(f"Finished: {time.time() - StartTime} seconds")
+    else:
+        "No solution found"
