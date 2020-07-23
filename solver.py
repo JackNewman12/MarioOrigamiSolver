@@ -10,23 +10,13 @@ class GameBoard:
     The Gameboard State
     """
 
-    def __init__(self, Board=None, NumMoves=None, NumAttacks=None) -> None:
+    def __init__(self, Board=None) -> None:
         if Board is not None:
             self.Board = np.array(Board)
         else:
             self.Board = np.zeros((4, 12), dtype=int)
         assert self.Board.shape == (4, 12)
         
-        if NumMoves:
-            self.NumMoves = NumMoves
-        else:
-            self.NumMoves = MAX_DEPTH
-        
-        if NumAttacks:
-            self.NumAttacks = NumAttacks
-        else:
-            self.NumAttacks = math.ceil(self.NumEnemies() / 4)
-
     def ValidRowMoves(self):
         return np.nonzero(np.sum(self.Board,axis=1))[0]
     
@@ -36,17 +26,15 @@ class GameBoard:
     def MoveRow(self, row, num):
         assert 0 <= row <= 3
         assert 0 <= num <= 11
-        self.Board[3 - row] = np.roll(self.Board[3 - row], num)
+        self.Board[3 - row] = np.take(self.Board[3 - row], range(0-num, 12-num), mode='wrap')
 
     def MoveCol(self, col, num):
         assert 0 <= col <= 11  # TODO - Can actually make this 5
         assert 0 <= num <= 7
-        # TODO - Whatever this mess is
-        TargetCols = self.Board[:, [col, col - 6]]
-        TargetCols[:, 1] = np.flip(TargetCols[:, 1])
-        TargetCols = np.roll(TargetCols.T, num).T
-        TargetCols[:, 1] = np.flip(TargetCols[:, 1])
-        self.Board[:, [col, col - 6]] = TargetCols
+        TempCols = self.Board[:, [col, col - 6]]
+        for _ in range(num):
+            TempCols = np.take(TempCols, [1,3,0,5,2,7,4,6])
+        self.Board[:, [col, col - 6]] = np.reshape(TempCols, (4,2))
 
     def NumEnemies(self):
         return self.Board.sum()
@@ -64,6 +52,9 @@ class GameBoard:
     def __str__(self) -> str:
         return np.array2string(self.Board)
 
+    def __deepcopy__(self, memo=None):
+        return GameBoard(copy.deepcopy(self.Board))
+
 
 def SolveBoard(Board: GameBoard, NumMoves=None):
     """
@@ -71,8 +62,8 @@ def SolveBoard(Board: GameBoard, NumMoves=None):
     """
     Moves = []
     if NumMoves is None:
-        # Initial Solve - Get from board def
-        NumMoves = Board.NumMoves
+        # Initial Solve call
+        NumMoves = MAX_DEPTH
 
     # Rows
     for i in Board.ValidRowMoves():
@@ -91,7 +82,7 @@ def SolveBoard(Board: GameBoard, NumMoves=None):
         return False, []
 
     for Move in Moves:
-        Win, _ = SimAttack(Move["Board"])
+        Win = SimAttack(Move["Board"])
         if Win:
             return True, [Move]
     
@@ -112,43 +103,40 @@ def SimAttack(Board: GameBoard):
     Simulate all the possible attacks
     """
     if Board.NumEnemies() == 0:
-        return False, []
-
+        return False
+    
+    MaxNumAttacks = math.ceil(Board.NumEnemies() / 4)
+    BootAttacks = 0
     TempBoard: GameBoard = copy.deepcopy(Board)
-    BootAttacks = []
     # Boots
     for i in range(0, 12):
         if TempBoard.Board[0][i] or TempBoard.Board[1][i]:
             TempBoard.AtkBoot(i)
-            BootAttacks.append(
-                {"Move": "Boot", "Col": i}
-            )
+            BootAttacks += 1
 
     HammerAttacksBoard = copy.deepcopy(TempBoard)
-    HammerAttacks = []
+    HammerAttacks = 0
     # Hammer
     for i in range(0, 12):
         if HammerAttacksBoard.Board[2][i] or HammerAttacksBoard.Board[3][i]:
             HammerAttacksBoard.AtkHammer(i)
-            HammerAttacks.append(
-                {"Move": "Hammer", "Col": i}
-            )
-    if (len(HammerAttacks) + len(BootAttacks)) <= Board.NumAttacks:
-        return True, BootAttacks.extend(HammerAttacks)
+            HammerAttacks += 1
+
+    if (HammerAttacks + BootAttacks) <= MaxNumAttacks:
+        return True
     
     HammerAttacksBoard = copy.deepcopy(TempBoard)
-    HammerAttacks = []
+    HammerAttacks = 0
     # Hammer - Shifted to cover edge cases
     for i in range(-1, -13, -1):
         if HammerAttacksBoard.Board[2][i] or HammerAttacksBoard.Board[3][i]:
             HammerAttacksBoard.AtkHammer(i)
-            HammerAttacks.append(
-                {"Move": "Hammer", "Col": i}
-            )
-    if (len(HammerAttacks) + len(BootAttacks)) <= Board.NumAttacks:
-        return True, BootAttacks.extend(HammerAttacks)
+            HammerAttacks += 1
 
-    return False, []
+    if (HammerAttacks + BootAttacks) <= MaxNumAttacks:
+        return True
+
+    return False
 
 def PrintResult(Moves):
     for Move in Moves:
@@ -175,6 +163,11 @@ if __name__ == "__main__":
 # 000000000010\
 # 100001100000\
 # 010000110000"
+#     InputPos = "\
+# 010001000000\
+# 101110000000\
+# 010001000000\
+# 101110000000"
     
     InputPos = np.array([int(c) for c in InputPos])
     InputPos.resize((4, 12))
