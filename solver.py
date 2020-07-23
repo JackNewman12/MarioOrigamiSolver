@@ -140,7 +140,18 @@ def SimAttack(Board: GameBoard):
 
 def PrintResult(Moves):
     for Move in Moves:
-        print(f"Move {Move['Move']} {Move['Loc']} by {Move['Shift']}")
+        if Move["Move"] == "Row":
+            if Move['Shift'] > 6:
+                Dir, Shift = "AntiClockwise", 12-Move['Shift']
+            else:
+                Dir, Shift = "Clockwise", Move['Shift']
+        if Move["Move"] == "Col":
+            if Move['Shift'] > 4:
+                Dir, Shift = "Outwards", 8-Move['Shift']
+            else:
+                Dir, Shift = "Inwards", Move['Shift']
+        print(f"Move {Move['Move']} {Move['Loc']} {Dir} by {Shift}")
+
     print(f"Final Board State:\n{Moves[-1]['Board']}")
 
 
