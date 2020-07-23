@@ -12,16 +12,14 @@ Enter board:
 000010000000
 001010010000
 000101001000
-
 Solving Board:
 [[0 0 0 0 1 0 0 0 0 0 0 0]
  [0 0 0 0 1 0 0 0 0 0 0 0]
  [0 0 1 0 1 0 0 1 0 0 0 0]
  [0 0 0 1 0 1 0 0 1 0 0 0]]
-
-Finished: 0.0917820930480957 seconds
-Move Row 0 by 11
-Move Col 1 by 6
+Finished: 0.0608370304107666 seconds
+Move Row 0 AntiClockwise by 1
+Move Col 1 Outwards by 2
 Final Board State:
 [[0 0 0 0 1 0 0 0 0 0 0 0]
  [0 0 0 0 1 0 0 0 0 0 0 0]
